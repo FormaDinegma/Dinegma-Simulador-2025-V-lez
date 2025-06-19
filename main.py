@@ -340,16 +340,46 @@ else:
 
 # --- CÁLCULO ---
 if st.button("Calcular Comisión"):
+    st.subheader("🧾 Comisión por Indicador")
     total = 0
+
     for indicador, (meta, logro) in indicadores.items():
-        comision = calcular_comision(tabla, indicador, meta, logro, venta)
-        total += comision
-        st.success(f"{indicador}: Q{comision}")
+        if meta == 0:
+            st.warning(f"⚠️ Meta para {indicador} es 0. No se puede calcular.")
+            continue
 
-    st.markdown("---")
-    st.markdown(f"<h2 style='color:green;'>💰 Comisión Total: Q{round(total, 2)}</h2>", unsafe_allow_html=True)
-    st.code(f"💰 Comisión Total: Q{round(total, 2)}", language="markdown")
+        porcentaje = (logro / meta) * 100
+        tramo = None
 
-# --- FOOTER ---
-st.markdown("---")
-st.markdown("<div style='text-align:center; opacity: 0.6;'>Desarrollado por Edgar Urrutia - Proyecto Formación - Dinegma 2025</div>", unsafe_allow_html=True)
+        for r in tabla[indicador]:
+            min_r, max_r = r["rango"]
+            if min_r <= porcentaje <= max_r:
+                tramo = r
+                break
+
+        if tramo:
+            fijo = tramo.get("fijo", 0)
+            variable = round(venta * tramo["variable"], 2)
+            comision_aplicada = max(variable, fijo)
+            total += comision_aplicada
+
+            st.markdown(f\"\"\"
+<div style='background-color:#0e1117; padding: 20px; border-radius: 10px; margin-bottom: 10px;'>
+    <h4 style='color:#58a6ff;'>📊 Indicador: {indicador}</h4>
+    <ul style='list-style:none; color:#c9d1d9; padding-left: 0;'>
+        <li>🔹 <b>% Cumplimiento:</b> {round(porcentaje, 2)}%</li>
+        <li>🔹 <b>Comisión Variable:</b> Q{variable}</li>
+        <li>🔹 <b>Comisión Fija:</b> Q{fijo} ✅ <b>Comisión Aplicada:</b> Q{comision_aplicada}</li>
+    </ul>
+</div>
+\"\"\", unsafe_allow_html=True)
+
+            st.success(f\"{indicador}: Q{comision_aplicada}\")
+
+        else:
+            st.warning(f\"⚠️ No se encontró un tramo para {indicador} con {round(porcentaje, 2)}%\")
+
+    st.markdown(\"---\")
+    st.markdown(f\"<h2 style='color:green;'>💰 Comisión Total: Q{round(total, 2)}</h2>\", unsafe_allow_html=True)
+    st.code(f\"💰 Comisión Total: Q{round(total, 2)}\", language=\"markdown\")
+
