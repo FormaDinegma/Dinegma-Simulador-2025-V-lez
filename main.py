@@ -1,8 +1,15 @@
 import streamlit as st
 
-# --- TABLAS DE COMISIONES ---
-# --- CLASIFICACIÓN DE TIENDAS VÉLEZ ---
+# Estilo global (fuente moderna)
+st.markdown("""
+    <style>
+    html, body, [class*='css']  {
+        font-family: 'Segoe UI', sans-serif;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
+# --- CLASIFICACIÓN DE TIENDAS VÉLEZ ---
 TIENDAS_VELEZ = {
     "Vélez Oakland 1": "A",
     "Vélez Oakland 2": "A",
@@ -21,6 +28,7 @@ TIENDAS_VELEZ = {
     "Vélez Kiosco Galerias": "Kiosco"
 }
 
+# --- TABLAS DE COMISIONES ---
 # ADMINISTRADORES - TIENDA A
 comisiones_admins_A = {
     "PPTO": [
@@ -268,10 +276,7 @@ comisiones_asesores_kioscos = {
         {"rango": (120, 999), "variable": 0.0032, "fijo": 165},
     ],
 }
-
-
-# Función para calcular cumplimiento y aplicar porcentaje
-
+# --- FUNCIÓN PARA CALCULAR COMISIÓN ---
 def calcular_comision(tabla, indicador, meta, logro, venta_total):
     if meta == 0:
         st.warning(f"⚠️ Meta para {indicador} es 0. No se puede calcular.")
@@ -281,34 +286,40 @@ def calcular_comision(tabla, indicador, meta, logro, venta_total):
     for tramo in tabla[indicador]:
         min_r, max_r = tramo["rango"]
         if min_r <= porcentaje <= max_r:
-            return round(venta_total * tramo["variable"], 2)
+            fijo = tramo.get("fijo", 0)
+            variable = round(venta_total * tramo["variable"], 2)
+            return max(variable, fijo)
+
     st.warning(f"⚠️ No se encontró un tramo para {indicador} con {round(porcentaje, 2)}%")
     return 0
 
 # --- INTERFAZ STREAMLIT ---
-st.title("📊 Simulador de Comisiones Vélez")
+st.markdown("<h1 style='font-size: 40px;'>📊 Simulador de Comisiones <b style='color:#3ECF8E'>Dinegma</b></h1>", unsafe_allow_html=True)
 
 # 🧍‍♂️ Nombre del colaborador
-nombre = st.text_input("Nombre del colaborador")
+nombre = st.text_input("Nombre del asesor o colaborador")
 
 # Ingreso básico
 tienda = st.selectbox("Selecciona tu tienda", list(TIENDAS_VELEZ.keys()))
 tipo_tienda = TIENDAS_VELEZ[tienda]
-
-# Mostrar resumen
-st.success(f"🧍 {nombre} - Cargo: {cargo} - Tienda: {tienda} ({tipo_tienda})")
-
 cargo = st.selectbox("Selecciona tu cargo", ["Administrador", "Alterno", "Asesor"])
 venta = st.number_input("Venta total lograda (Q)", min_value=0.0)
 
-# Ingreso de indicadores
-indicadores = {}
-for indicador in ["PPTO", "VxF", "AxF", "TC", "Fidelizacion"]:
-    meta = st.number_input(f"Meta {indicador}", min_value=0.0, key=f"meta_{indicador}")
-    logro = st.number_input(f"Logro {indicador}", min_value=0.0, key=f"logro_{indicador}")
-    indicadores[indicador] = (meta, logro)
+# Mostrar resumen
+t.st.success(f"🧍 - Cargo: {cargo} - Tienda: {tienda}")
+st.info(f"📌 Esta tienda es clasificada como: Tipo {tipo_tienda}")
 
-# Selección de tabla según cargo y tipo de tienda
+# Ingreso de indicadores
+st.markdown("### 📥 Ingreso de Datos")
+indicadores = {}
+cols = st.columns(4)
+for i, indicador in enumerate(["PPTO", "VxF", "AxF", "TC", "Fidelizacion"]):
+    with cols[i % 4]:
+        meta = st.number_input(f"Meta de {indicador}", min_value=0.0, key=f"meta_{indicador}")
+        logro = st.number_input(f"Logro de {indicador}", min_value=0.0, key=f"logro_{indicador}")
+        indicadores[indicador] = (meta, logro)
+
+# --- SELECCIÓN DE TABLA DE COMISIÓN ---
 if cargo == "Administrador" and tipo_tienda == "A":
     tabla = comisiones_admins_A
 elif cargo == "Administrador" and tipo_tienda == "B":
@@ -327,6 +338,7 @@ else:
     st.error("No hay tabla definida para esta combinación de cargo y tienda.")
     st.stop()
 
+# --- CÁLCULO ---
 if st.button("Calcular Comisión"):
     total = 0
     for indicador, (meta, logro) in indicadores.items():
@@ -336,7 +348,8 @@ if st.button("Calcular Comisión"):
 
     st.markdown("---")
     st.markdown(f"<h2 style='color:green;'>💰 Comisión Total: Q{round(total, 2)}</h2>", unsafe_allow_html=True)
+    st.code(f"💰 Comisión Total: Q{round(total, 2)}", language="markdown")
 
-# Pie
+# --- FOOTER ---
 st.markdown("---")
 st.markdown("<div style='text-align:center; opacity: 0.6;'>Desarrollado por Edgar Urrutia - Proyecto Formación - Dinegma 2025</div>", unsafe_allow_html=True)
