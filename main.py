@@ -1,107 +1,91 @@
 import streamlit as st
 
-# --- Tiendas y Tipos ---
-tiendas_por_tipo = {
-    "Vélez Oakland 1": "A",
-    "Vélez Oakland 2": "A",
-    "Vélez Miraflores": "A",
-    "Vélez Cayalá": "A",
-    "Vélez Multiplaza": "A",
-    "Vélez Naranjo": "B",
-    "Vélez Portales": "B",
-    "Vélez Chimaltenango": "B",
-    "Vélez Pradera Xela": "B",
-    "Vélez Interplaza Xela": "B",
-    "Vélez Kiosco Miraflores": "Kiosco",
-    "Vélez Kiosco Oakland": "Kiosco",
-    "Vélez Kiosco Decima": "Kiosco",
-    "Vélez Kiosco Gran Vía": "Kiosco",
-    "Vélez Kiosco Galerias": "Kiosco"
+# --- TABLAS DE COMISIONES ---
+
+# ADMINISTRADORES - TIENDA A
+comisiones_admins_A = {
+    "PPTO": [
+        {"rango": (85, 89.99), "variable": 0.0044},
+        {"rango": (90, 99.99), "variable": 0.0050},
+        {"rango": (100, 109.99), "variable": 0.0069},
+        {"rango": (110, 119.99), "variable": 0.0072},
+        {"rango": (120, 999), "variable": 0.0076},
+    ],
+    "VxF": [
+        {"rango": (85, 89.99), "variable": 0.0006},
+        {"rango": (90, 99.99), "variable": 0.0007},
+        {"rango": (100, 109.99), "variable": 0.0010},
+        {"rango": (110, 119.99), "variable": 0.0010},
+        {"rango": (120, 999), "variable": 0.0011},
+    ],
+    "AxF": [
+        {"rango": (85, 89.99), "variable": 0.0006},
+        {"rango": (90, 99.99), "variable": 0.0007},
+        {"rango": (100, 109.99), "variable": 0.0010},
+        {"rango": (110, 119.99), "variable": 0.0010},
+        {"rango": (120, 999), "variable": 0.0011},
+    ],
+    "TC": [
+        {"rango": (85, 89.99), "variable": 0.0007},
+        {"rango": (90, 99.99), "variable": 0.0008},
+        {"rango": (100, 109.99), "variable": 0.0011},
+        {"rango": (110, 119.99), "variable": 0.0012},
+        {"rango": (120, 999), "variable": 0.0012},
+    ],
+    "Fidelizacion": [
+        {"rango": (85, 89.99), "variable": 0.0006},
+        {"rango": (90, 99.99), "variable": 0.0007},
+        {"rango": (100, 109.99), "variable": 0.0010},
+        {"rango": (110, 119.99), "variable": 0.0010},
+        {"rango": (120, 999), "variable": 0.0011},
+    ],
 }
 
-# --- App UI ---
-st.title("Simulador de Comisiones Vélez")
+# (Aquí continuarías con las tablas para Alterno A, Asesores A, Admins B, Asesores B, Kioscos...)
 
-nombre = st.text_input("Nombre del colaborador")
-cargo = st.selectbox("Cargo", ["Administrador", "Alterno", "Asesor"])
-tienda = st.selectbox("Tienda", list(tiendas_por_tipo.keys()))
-tipo_tienda = tiendas_por_tipo[tienda]
+# Función para calcular cumplimiento y aplicar porcentaje
 
-st.markdown(f"**Tipo de Tienda Detectado:** {tipo_tienda}")
+def calcular_comision(tabla, indicador, meta, logro, venta_total):
+    if meta == 0:
+        st.warning(f"⚠️ Meta para {indicador} es 0. No se puede calcular.")
+        return 0
 
-# Función para ingreso de metas y logros
-def ingreso_indicadores(indicador):
-    col1, col2 = st.columns(2)
-    with col1:
-        meta = st.number_input(f"Meta {indicador}", min_value=0.0, step=0.01, key=f"meta_{indicador}")
-    with col2:
-        logro = st.number_input(f"Logro {indicador}", min_value=0.0, step=0.01, key=f"logro_{indicador}")
-    return meta, logro
+    porcentaje = (logro / meta) * 100
+    for tramo in tabla[indicador]:
+        min_r, max_r = tramo["rango"]
+        if min_r <= porcentaje <= max_r:
+            return round(venta_total * tramo["variable"], 2)
+    st.warning(f"⚠️ No se encontró un tramo para {indicador} con {round(porcentaje, 2)}%")
+    return 0
 
-meta_ppto, logro_ppto = ingreso_indicadores("PPTO")
+# --- INTERFAZ STREAMLIT ---
+st.title("📊 Simulador de Comisiones Vélez")
 
-# --- Cálculos ---
-def calcular_cumplimiento(meta, logro):
-    return (logro / meta) * 100 if meta != 0 else 0
+# Ingreso básico
+tienda = st.selectbox("Selecciona tu tienda", list(range(1, 6)))
+cargo = st.selectbox("Selecciona tu cargo", ["Administrador"])  # Puedes ampliar esto
+venta = st.number_input("Venta total lograda (Q)", min_value=0.0)
 
-def obtener_comision_y_fijo(cargo, tipo_tienda, indicador, cumplimiento):
-    cumplimiento = round(cumplimiento, 2)
-    comisiones = {
-        "Administrador": {
-            "A": {
-                "PPTO": [
-                    (85, 89.99, 0.44),
-                    (90, 99.99, 0.50),
-                    (100, 109.99, 0.69),
-                    (110, 119.99, 0.72),
-                    (120, float('inf'), 0.76),
-                ]
-            },
-            "Kiosco": {
-                "PPTO": [
-                    (85, 89.99, 0.47, 737),
-                    (90, 99.99, 0.54, 871),
-                    (100, 109.99, 0.74, 1005),
-                    (110, 119.99, 1.61, 1139),
-                    (120, float('inf'), 1.68, 1206),
-                ]
-            }
-        },
-        "Asesor": {
-            "Kiosco": {
-                "PPTO": [
-                    (85, 89.99, 1.21, 77),
-                    (90, 99.99, 1.47, 603),
-                    (100, 109.99, 1.81, 737),
-                    (110, 119.99, 1.88, 871),
-                    (120, float('inf'), 1.94, 1005),
-                ]
-            }
-        }
-    }
+# Ingreso de indicadores
+indicadores = {}
+for indicador in ["PPTO", "VxF", "AxF", "TC", "Fidelizacion"]:
+    meta = st.number_input(f"Meta {indicador}", min_value=0.0, key=f"meta_{indicador}")
+    logro = st.number_input(f"Logro {indicador}", min_value=0.0, key=f"logro_{indicador}")
+    indicadores[indicador] = (meta, logro)
 
-    try:
-        reglas = comisiones[cargo][tipo_tienda][indicador]
-        for regla in reglas:
-            if regla[0] <= cumplimiento <= regla[1]:
-                return (regla[2], regla[3]) if len(regla) == 4 else (regla[2], None)
-    except KeyError:
-        return 0.0, None
+# Simular cálculo para Admin A
+tabla = comisiones_admins_A
 
-# --- Resultado para PPTO ---
-if nombre and tienda:
-    cumplimiento_ppto = calcular_cumplimiento(meta_ppto, logro_ppto)
-    porcentaje, fijo = obtener_comision_y_fijo(cargo, tipo_tienda, "PPTO", cumplimiento_ppto)
+if st.button("Calcular Comisión"):
+    total = 0
+    for indicador, (meta, logro) in indicadores.items():
+        comision = calcular_comision(tabla, indicador, meta, logro, venta)
+        total += comision
+        st.success(f"{indicador}: Q{comision}")
 
-    st.subheader("Resultado Comisión PPTO")
-    st.write(f"Cumplimiento: {cumplimiento_ppto:.2f}%")
-    st.write(f"Porcentaje de comisión: {porcentaje}%")
-    if fijo is not None:
-        st.write(f"Monto fijo garantizado (si el porcentaje da menos): Q{fijo}")
+    st.markdown("---")
+    st.markdown(f"<h2 style='color:green;'>💰 Comisión Total: Q{round(total, 2)}</h2>", unsafe_allow_html=True)
 
-# --- Pie de página ---
+# Pie
 st.markdown("---")
-st.markdown(
-    "<div style='text-align:center; opacity: 0.6;'>Desarrollado por Edgar Urrutia - Proyecto Formación - Dinegma 2025</div>",
-    unsafe_allow_html=True
-)
+st.markdown("<div style='text-align:center; opacity: 0.6;'>Desarrollado por Edgar Urrutia - Proyecto Formación - Dinegma 2025</div>", unsafe_allow_html=True)
