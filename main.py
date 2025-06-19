@@ -306,7 +306,7 @@ cargo = st.selectbox("Selecciona tu cargo", ["Administrador", "Alterno", "Asesor
 venta = st.number_input("Venta total lograda (Q)", min_value=0.0)
 
 # Mostrar resumen
-st.success(f"🧍 - Cargo: {cargo} - Tienda: {tienda}")
+st.success(f"🧍 {nombre} - Cargo: {cargo} - Tienda: {tienda} ({tipo_tienda})")
 st.info(f"📌 Esta tienda es clasificada como: Tipo {tipo_tienda}")
 
 # Ingreso de indicadores
